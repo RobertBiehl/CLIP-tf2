@@ -92,6 +92,7 @@ def load(name: str):
 def load_pytorch_weights(model: keras.Model, state_dict: dict):
     tf_dict = { v.name.replace('.', '/'): v for v in model.weights }
 
+    # (from, to) replacement pairs to convert tensor names from tf to pytorch
     def prepare_key(key):
         repl = [
             ('clip/', ''),
