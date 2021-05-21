@@ -1,0 +1,22 @@
+name: clip-tf2
+channels:
+  - conda-forge
+  - defaults
+  - pytorch
+dependencies:
+  - pip
+  - python=3.8
+  - cudatoolkit==11.0.221
+  - cudnn
+  - pytorch=1.7.1 #clip
+  - torchvision #clip
+  - pip:
+      - tensorflow-gpu
+      - tensorflow-datasets
+      - tf-image
+      - tensorflow_io
+      - tensorflow_addons
+      - ftfy #clip
+      - regex #clip
+      - tqdm #clip
+      - git+https://github.com/openai/CLIP.git #clip
