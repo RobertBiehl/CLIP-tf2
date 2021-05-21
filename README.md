@@ -11,7 +11,7 @@ python convert_clip.py
 ```
 
 ## Tasks
-- [x] Convert PyTorch to Tensorflow model
+- [x] Convert PyTorch to Tensorflow model (ViT still TODO)
 - [ ] Save Tensorflow model
 - [ ] Make PyTorch dependency optional (only for updating model from official weights)
 - [ ] Implement training
