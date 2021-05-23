@@ -6,6 +6,8 @@ from tensorflow import keras
 import tensorflow as tf
 from tensorflow.keras import layers
 from .transformer import LayerNorm
+from .resnet import ModifiedResNet
+from .transformer import Transformer
 
 class CLIP(keras.Model):
     def __init__(self,
@@ -28,7 +30,6 @@ class CLIP(keras.Model):
 
         if isinstance(vision_layers, (tuple, list)):
             vision_heads = vision_width * 32 // 64
-            from .resnet import ModifiedResNet
             self.visual = ModifiedResNet(
                 layers=vision_layers,
                 output_dim=embed_dim,
@@ -50,7 +51,6 @@ class CLIP(keras.Model):
                 name="visual"
             )
 
-        from .transformer import Transformer
         self.transformer = Transformer(
             width=transformer_width,
             layers=transformer_layers,
@@ -62,7 +62,7 @@ class CLIP(keras.Model):
         self.vocab_size = vocab_size
         self.token_embedding = tf.Variable(tf.zeros((vocab_size, transformer_width)), name="token_embedding")
         self.positional_embedding = tf.Variable(tf.zeros((self.context_length, transformer_width)), name="positional_embedding")
-        self.ln_final = LayerNorm(name="ln_final") # LayerNorm(transformer_width, name="ln_final") TODO: check layernorm dims
+        self.ln_final = LayerNorm(name="ln_final")
 
         self.text_projection = tf.Variable(tf.zeros((transformer_width, embed_dim)), name="text_projection")
         self.logit_scale = tf.Variable(np.ones([]) * np.log(1 / 0.07), dtype=tf.float32, name="logit_scale")
@@ -127,11 +127,11 @@ class CLIP(keras.Model):
         #mask.fill_(float("-inf"))
         #mask.triu_(1)  # zero out the lower diagonal
 
-        import torch
-        masko = torch.empty(self.context_length, self.context_length)
-        masko.fill_(float("-inf"))
-        masko.triu_(1)  # zero out the lower diagonal
-        return tf.constant(masko.cpu().detach().numpy())
+        # import torch
+        # masko = torch.empty(self.context_length, self.context_length)
+        # masko.fill_(float("-inf"))
+        # masko.triu_(1)  # zero out the lower diagonal
+        # return tf.constant(masko.cpu().detach().numpy())
 
     @property
     def dtype(self):

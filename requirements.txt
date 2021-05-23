@@ -1,0 +1,7 @@
+tensorflow>=2.4.0
+ftfy
+
+#clip pytorch dependencies
+regex
+tqdm
+git+https://github.com/openai/CLIP.git
