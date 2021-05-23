@@ -4,11 +4,11 @@ OpenAI CLIP converted to Tensorflow 2/Keras
 __Official Repository__: https://github.com/openai/CLIP
 
 ## Model conversion
-```
+```sh
 python convert_clip.py --model RN50 --output CLIP_{model}
 ```
 Output: 
-``` 
+```sh
 Copying weights: 100%|██████████| 482/482 [00:00<00:00, 674.13it/s]
 I0523 18:18:40.867926 4600192512 builder_impl.py:774] Assets written to: CLIP_RN50/assets
 
