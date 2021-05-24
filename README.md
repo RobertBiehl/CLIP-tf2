@@ -5,6 +5,20 @@ __Official Repository__: https://github.com/openai/CLIP
 
 ## Model conversion
 ```sh
+python convert_clip.py --help
+
+       USAGE: convert_clip.py [flags]
+flags:
+
+convert_clip.py:
+  --model: <RN50|RN101|RN50x4|ViT-B/32>: Which model to convert
+    (default: 'RN50')
+  --output: Filename of converted weights file. (format string)
+    (default: 'CLIP_{model}')
+```
+
+Example:
+```sh
 python convert_clip.py --model RN50 --output CLIP_{model}
 ```
 Output: 
@@ -37,7 +51,7 @@ Process finished with exit code 0
 ## Tasks
 - [x] Convert PyTorch to Tensorflow model (RN)
 - [x] Export as Tensorflow SavedModel
-- [ ] ViT conversion (WIP)
+- [x] ViT conversion
 - [ ] Export standalone image and text encoders
 - [ ] Float16 support
 - [ ] Make PyTorch dependency optional (only for updating model from official weights)

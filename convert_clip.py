@@ -1,14 +1,8 @@
-import tempfile
-from pathlib import Path
-
 import numpy as np
-import torch.hub
 from absl import app, flags
-
 import tensorflow as tf
 
 from clip_tf.model import build_model
-
 import converter
 
 _MODELS = {
@@ -26,33 +20,26 @@ flags.DEFINE_string('output', 'CLIP_{model}', 'Filename of converted weights fil
 image_url = "https://github.com/openai/CLIP/blob/main/CLIP.png?raw=true"
 text_options = ["a diagram", "a dog", "a cat", "a neural network"]
 
+
 def main(argv):
     model_url = _MODELS[FLAGS.model]
     state_dict = converter.download_statedict(model_url)
     model = build_model(state_dict)
 
-    # predict to build shapes
-    model.predict([
+    # predict to build shapes (model.build doesnt work, as it only supports float inputs)
+    model.predict((
         np.ones((1, 224, 224, 3), np.float32),
-        np.ones((1, 1, 77), np.int32)
-    ])
+        np.ones((1, 4, 77), np.int64)
+    ))
     converter.load_pytorch_weights(model, state_dict, verbose=False)
 
-    converter.verify(FLAGS.model, model, image_url, text_options, verbose=False)
+    converter.verify(FLAGS.model, model, image_url, text_options, verbose=True)
 
-    output_filename = FLAGS.output.format(model=FLAGS.model)
+    # create SavedModel
+    output_filename = FLAGS.output.format(model=FLAGS.model.replace("/", "_"))
+    model.save(output_filename)
 
-    # create a clean new model (workaround to bug when directly saving in SavedModel format)
-    # TODO: make this unnecessary
-    with tempfile.TemporaryDirectory() as tmpdir:
-        temp_weights = Path(tmpdir) / f"tmp_weights"
-        model.save_weights(temp_weights)
-        del model
-        temp_model = build_model(state_dict)
-        temp_model.load_weights(temp_weights)
-        converter.verify(FLAGS.model, temp_model, image_url, text_options, verbose=False)
-        temp_model.save(output_filename)
-
+    # load and test model
     model = tf.keras.models.load_model(output_filename)
     model.summary()
     converter.verify(FLAGS.model, model, image_url, text_options, verbose=True)

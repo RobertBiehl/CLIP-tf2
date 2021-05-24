@@ -69,6 +69,10 @@ class CLIP(keras.Model):
 
         #self.initialize_parameters() TODO: get this working again
 
+    # def build(self, input_shape):
+    #     super(CLIP, self).build(input_shape)
+        
+
     def initialize_parameters(self):
         self.token_embedding.assign(tf.random.normal(self.token_embedding.shape, stddev=0.02))
         self.positional_embedding.assign(tf.random.normal(self.positional_embedding.shape, stddev=0.01))
@@ -155,11 +159,15 @@ class CLIP(keras.Model):
 
         return x
 
-    def call(self, input):
+    @tf.function(input_signature=[(
+        tf.TensorSpec(shape=(None, None, None, 3), dtype=tf.float32, name="image"),
+        tf.TensorSpec(shape=(None, None, None), dtype=tf.int64, name="text")
+    )])
+    def call(self, input: Tuple[tf.Tensor, tf.Tensor]):
         image, text = input
         image_features = self.encode_image(image)
 
-        text = tf.squeeze(text, axis=0) # because of stupid keras feature that all input tensoirs have to have the same batch size
+        text = tf.squeeze(text, axis=0) # TODO: find another way to feed data, but keras requires that all input tensors have to have the same batch size
         text_features = self.encode_text(text)
 
         # normalized features
