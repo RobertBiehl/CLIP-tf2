@@ -67,7 +67,8 @@ $ python convert_clip.py --model RN50 --text_output models/CLIP_image_{model}
 - [x] Export as Tensorflow SavedModel
 - [x] ViT conversion
 - [x] Export standalone image and text encoders
-- [ ] Installable pip package
+- [x] Installable pip package
+- [ ] Improve API: loading model, usage
 - [ ] Float16 support
 - [ ] Make PyTorch dependency optional (only for updating model from official weights)
 - [ ] Implement training
