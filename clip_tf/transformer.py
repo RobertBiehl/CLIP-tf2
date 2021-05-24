@@ -52,11 +52,11 @@ class ResidualAttentionBlock(klayers.Layer):
         return x
 
 
-class Transformer(klayers.Layer):
+class Transformer(keras.Model):
     def __init__(self, width: int, layers: int, heads: int, attn_mask: tf.Tensor = None, name="transformer"):
         super().__init__(name=name)
         self.width = width
-        self.layers = layers
+        self.num_layers = layers
         self.heads = heads
         self.attn_mask = attn_mask
         self.resblocks = keras.Sequential([
@@ -67,7 +67,7 @@ class Transformer(klayers.Layer):
     def get_config(self):
         return {
             "width": self.width,
-            "layers": self.layers,
+            "layers": self.num_layers,
             "heads": self.heads,
             "name": self.name
         }

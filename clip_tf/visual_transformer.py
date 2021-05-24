@@ -1,10 +1,11 @@
 import tensorflow as tf
+from tensorflow import keras
 from tensorflow.keras import layers as klayers
 from .layers import LayerNorm
 from .transformer import Transformer
 
 
-class VisualTransformer(klayers.Layer):
+class VisualTransformer(keras.Model):
     def __init__(self, input_resolution: int, patch_size: int, width: int, layers: int, heads: int, output_dim: int, name="VisualTransformer"):
         super().__init__(name=name)
         self.input_resolution = input_resolution

@@ -1,13 +1,6 @@
-import math
-from collections import OrderedDict
-from typing import Tuple, Union
-
-import numpy as np
-import torch
 from tensorflow import keras
 import tensorflow as tf
 from tensorflow.keras import layers as klayers
-from tensorflow.python.ops import math_ops, special_math_ops
 
 
 class Bottleneck(klayers.Layer):
@@ -128,7 +121,7 @@ class AttentionPool2d(klayers.Layer):
         return x[:, 0, ...]
 
 
-class ModifiedResNet(klayers.Layer):
+class ModifiedResNet(keras.Model):
     """
     A ResNet class that is similar to torchvision's but contains the following changes:
     - There are now 3 "stem" convolutions as opposed to 1, with an average pool instead of a max pool.

@@ -13,8 +13,10 @@ _MODELS = {
 }
 
 FLAGS = flags.FLAGS
-flags.DEFINE_enum('model', 'RN50', _MODELS.keys(), 'Which model to convert')
-flags.DEFINE_string('output', 'CLIP_{model}', 'Filename of converted weights file. (format string)')
+flags.DEFINE_enum('model', 'RN50', _MODELS.keys(), 'CLIP model architecture to convert')
+flags.DEFINE_string('output', 'models/CLIP_{model}', 'CLIP Keras SavedModel Output destination')
+flags.DEFINE_string('image_output', None, 'Image encoder Keras SavedModel output destination (optional)')
+flags.DEFINE_string('text_output', None, 'Text encoder Keras SavedModel output destination (optional)')
 
 # model input for verification
 image_url = "https://github.com/openai/CLIP/blob/main/CLIP.png?raw=true"
@@ -43,6 +45,15 @@ def main(argv):
     model = tf.keras.models.load_model(output_filename)
     model.summary()
     converter.verify(FLAGS.model, model, image_url, text_options, verbose=True)
+
+    if FLAGS.image_output is not None:
+        image_output_filename = FLAGS.image_output.format(model=FLAGS.model.replace("/", "_"))
+        model.visual.save(image_output_filename)
+
+    if FLAGS.text_output is not None:
+        text_output_filename = FLAGS.text_output.format(model=FLAGS.model.replace("/", "_"))
+        model.visual.save(text_output_filename)
+
 
 
 if __name__ == '__main__':

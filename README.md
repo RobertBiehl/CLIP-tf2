@@ -5,28 +5,30 @@ __Official Repository__: https://github.com/openai/CLIP
 
 ## Model conversion
 ```sh
-python convert_clip.py --help
+$ python convert_clip.py --help
 
        USAGE: convert_clip.py [flags]
 flags:
 
 convert_clip.py:
-  --model: <RN50|RN101|RN50x4|ViT-B/32>: Which model to convert
+  --image_output: Image encoder Keras SavedModel output destination (optional)
+  --model: <RN50|RN101|RN50x4|ViT-B/32>: CLIP model architecture to convert
     (default: 'RN50')
-  --output: Filename of converted weights file. (format string)
-    (default: 'CLIP_{model}')
+  --output: CLIP Keras SavedModel Output destination
+    (default: 'models/CLIP_{model}')
+  --text_output: Text encoder Keras SavedModel output destination (optional)
 ```
 
 Example:
 ```sh
-python convert_clip.py --model RN50 --output CLIP_{model}
+$ python convert_clip.py --model RN50 --output models/CLIP_{model}
 ```
 Output: 
 ```sh
 Copying weights: 100%|██████████| 482/482 [00:00<00:00, 674.13it/s]
 I0523 18:18:40.867926 4600192512 builder_impl.py:774] Assets written to: CLIP_RN50/assets
 
-Model: "clip_1"
+Model: "clip"
 _________________________________________________________________
 Layer (type)                 Output Shape              Param #   
 =================================================================
@@ -48,11 +50,24 @@ Tensorflow: [[0.24351244 0.00320391 0.0008252  0.7524584 ]]
 Process finished with exit code 0
 ```
 
+__Exporting standalone encoders:__
+
+Image encoder:
+```sh
+$ python convert_clip.py --model RN50 --image_output models/CLIP_image_{model}
+```
+
+Text encoder:
+```sh
+$ python convert_clip.py --model RN50 --text_output models/CLIP_image_{model}
+```
+
 ## Tasks
 - [x] Convert PyTorch to Tensorflow model (RN)
 - [x] Export as Tensorflow SavedModel
 - [x] ViT conversion
-- [ ] Export standalone image and text encoders
+- [x] Export standalone image and text encoders
+- [ ] Installable pip package
 - [ ] Float16 support
 - [ ] Make PyTorch dependency optional (only for updating model from official weights)
 - [ ] Implement training
