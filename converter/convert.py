@@ -191,11 +191,13 @@ def load_pytorch_weights(model: keras.Model, state_dict: dict, verbose=False):
         assert isinstance(dest, object)
         dest.assign(source_weights.numpy().astype(np.float32))
 
-    # print("Unmapped keys:")
     # unmapped_keys = set(state_dict.keys()).difference(mapped_keys)
-    # for k in unmapped_keys:
-    #     print(f"missing '{k}' -> '?'")
-    # exit(0)
+    # if len(unmapped_keys) > 0:
+    #     print("Unmapped keys in state_dict:")
+    #     for k in unmapped_keys:
+    #         print(f"missing '{k}' -> '?'")
+    #
+    #     exit(0)
 
 
 def verify(model_name: str, keras_model: keras.Model, image_url: str, text_options: List[str], verbose: bool = False):

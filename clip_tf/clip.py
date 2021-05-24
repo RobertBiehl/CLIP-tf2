@@ -4,10 +4,11 @@ from typing import Tuple, Union
 import numpy as np
 from tensorflow import keras
 import tensorflow as tf
-from tensorflow.keras import layers
-from .transformer import LayerNorm
+from .layers import LayerNorm
 from .resnet import ModifiedResNet
 from .transformer import Transformer
+from .visual_transformer import VisualTransformer
+
 
 class CLIP(keras.Model):
     def __init__(self,
@@ -40,7 +41,6 @@ class CLIP(keras.Model):
             )
         else:
             vision_heads = vision_width // 64
-            from visual_transformer import VisualTransformer
             self.visual = VisualTransformer(
                 input_resolution=image_resolution,
                 patch_size=vision_patch_size,

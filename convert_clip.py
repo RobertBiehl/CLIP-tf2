@@ -36,7 +36,7 @@ def main(argv):
         np.ones((1, 224, 224, 3), np.float32),
         np.ones((1, 1, 77), np.int32)
     ])
-    converter.load_pytorch_weights(model, state_dict)
+    converter.load_pytorch_weights(model, state_dict, verbose=False)
 
     converter.verify(FLAGS.model, model, image_url, text_options, verbose=False)
 
@@ -45,11 +45,11 @@ def main(argv):
     # create a clean new model (workaround to bug when directly saving in SavedModel format)
     # TODO: make this unnecessary
     with tempfile.TemporaryDirectory() as tmpdir:
-        temp_weights = Path(tmpdir) / f"{FLAGS.model}_weights"
+        temp_weights = Path(tmpdir) / f"tmp_weights"
         model.save_weights(temp_weights)
         del model
         temp_model = build_model(state_dict)
-        temp_model.load_weights(temp_weights).expect_partial()
+        temp_model.load_weights(temp_weights)
         converter.verify(FLAGS.model, temp_model, image_url, text_options, verbose=False)
         temp_model.save(output_filename)
 

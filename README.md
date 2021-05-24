@@ -37,9 +37,9 @@ Process finished with exit code 0
 ## Tasks
 - [x] Convert PyTorch to Tensorflow model (RN)
 - [x] Export as Tensorflow SavedModel
+- [ ] ViT conversion (WIP)
 - [ ] Export standalone image and text encoders
 - [ ] Float16 support
-- [ ] ViT conversion
 - [ ] Make PyTorch dependency optional (only for updating model from official weights)
 - [ ] Implement training
 
