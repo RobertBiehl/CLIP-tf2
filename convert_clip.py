@@ -17,6 +17,7 @@ flags.DEFINE_enum('model', 'RN50', _MODELS.keys(), 'CLIP model architecture to c
 flags.DEFINE_string('output', 'models/CLIP_{model}', 'CLIP Keras SavedModel Output destination')
 flags.DEFINE_string('image_output', None, 'Image encoder Keras SavedModel output destination (optional)')
 flags.DEFINE_string('text_output', None, 'Text encoder Keras SavedModel output destination (optional)')
+flags.DEFINE_bool('all', False, 'Export all versions. (will use output location if image_output or text_output are not present)')
 
 # model input for verification
 image_url = "https://github.com/openai/CLIP/blob/main/CLIP.png?raw=true"
@@ -24,13 +25,14 @@ text_options = ["a diagram", "a dog", "a cat", "a neural network"]
 
 
 def main(argv):
+    sanitized_model_name = FLAGS.model.replace("/", "_")
     model_url = _MODELS[FLAGS.model]
     state_dict = converter.download_statedict(model_url)
     model = build_model(state_dict)
 
     # predict to build shapes (model.build doesnt work, as it only supports float inputs)
     model.predict((
-        np.ones((1, 224, 224, 3), np.float32),
+        np.ones((1, model.image_resolution, model.image_resolution, 3), np.float32),
         np.ones((1, 4, 77), np.int64)
     ))
     converter.load_pytorch_weights(model, state_dict, verbose=False)
@@ -38,7 +40,7 @@ def main(argv):
     converter.verify(FLAGS.model, model, image_url, text_options, verbose=True)
 
     # create SavedModel
-    output_filename = FLAGS.output.format(model=FLAGS.model.replace("/", "_"))
+    output_filename = FLAGS.output.format(model=sanitized_model_name)
     model.save(output_filename)
 
     # load and test model
@@ -46,12 +48,14 @@ def main(argv):
     model.summary()
     converter.verify(FLAGS.model, model, image_url, text_options, verbose=True)
 
-    if FLAGS.image_output is not None:
-        image_output_filename = FLAGS.image_output.format(model=FLAGS.model.replace("/", "_"))
+    image_output = FLAGS.image_output or (FLAGS.output.format(model="image_{model}") if FLAGS.all else None)
+    if image_output is not None:
+        image_output_filename = image_output.format(model=sanitized_model_name)
         model.visual.save(image_output_filename)
 
-    if FLAGS.text_output is not None:
-        text_output_filename = FLAGS.text_output.format(model=FLAGS.model.replace("/", "_"))
+    text_output = FLAGS.text_output or (FLAGS.output.format(model="text_{model}") if FLAGS.all else None)
+    if text_output is not None:
+        text_output_filename = text_output.format(model=sanitized_model_name)
         model.visual.save(text_output_filename)
 
 

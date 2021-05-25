@@ -11,7 +11,7 @@ class VisualTransformer(keras.Model):
         self.input_resolution = input_resolution
         self.patch_size = patch_size
         self.width = width
-        self.layers = layers
+        self.num_layers = layers
         self.heads = heads
         self.output_dim = output_dim
 
@@ -34,7 +34,7 @@ class VisualTransformer(keras.Model):
             "input_resolution": self.input_resolution,
             "patch_size": self.patch_size,
             "width": self.width,
-            "layers": self.layers,
+            "layers": self.num_layers,
             "heads": self.heads,
             "output_dim": self.output_dim,
             "name": self.name
@@ -48,31 +48,17 @@ class VisualTransformer(keras.Model):
         x = self.conv1(x)  # shape = [*, grid, grid, width]
 
         x_shape = tf.shape(x)
-        x = tf.reshape(x, (x_shape[0], x_shape[1]*x_shape[2], x_shape[3]))  # shape = [*, grid ** 2, width] # TODO: check if correct for tensorflow
-        #x = x.permute(0, 2, 1)  # shape = [*, grid ** 2, width]
+        x = tf.reshape(x, (x_shape[0], x_shape[1]*x_shape[2], x_shape[3]))  # shape = [*, grid ** 2, width]
 
         x_shape = tf.shape(x)
-        print(f"ViT 1 x.shape={x.shape}")
         x = tf.concat([tf.broadcast_to(tf.cast(self.class_embedding, x.dtype), (x_shape[0], 1, x_shape[-1])), x], axis=1)  # shape = [*, grid ** 2 + 1, width]
-        print(f"ViT 2 x.shape={x.shape}")
         x = x + tf.cast(self.positional_embedding, x.dtype)
         x = self.ln_pre(x)
-        print(f"ViT 3 x.shape={x.shape}")
-        #tf.print(f"ViT 3 x.shape=", x.shape, "x=", x)
-
-        #x = x.permute(1, 0, 2)  # NLD -> LND
         x = self.transformer(x)
-        #x = x.permute(1, 0, 2)  # LND -> NLD
-        print(f"ViT 4 x.shape={x.shape}")
-        #tf.print(f"ViT 4 x.shape=", x.shape, "x=", x)
-
         x = self.ln_post(x[:, 0, :])
-        print(f"ViT 4 x.shape={x.shape}")
 
         if self.proj is not None:
             x = x @ self.proj
-
-        print(f"ViT 5 x.shape={x.shape}")
 
         return x
 

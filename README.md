@@ -11,6 +11,9 @@ $ python convert_clip.py --help
 flags:
 
 convert_clip.py:
+  --[no]all: Export all versions. (will use output location if image_output or
+    text_output are not present)
+    (default: 'false')
   --image_output: Image encoder Keras SavedModel output destination (optional)
   --model: <RN50|RN101|RN50x4|ViT-B/32>: CLIP model architecture to convert
     (default: 'RN50')

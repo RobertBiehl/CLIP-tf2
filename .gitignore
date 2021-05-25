@@ -132,3 +132,4 @@ dmypy.json
 *.index
 checkpoint
 .idea
+models/

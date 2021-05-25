@@ -27,6 +27,7 @@ class CLIP(keras.Model):
                  ):
         super().__init__()
 
+        self.image_resolution = image_resolution
         self.context_length = context_length
 
         if isinstance(vision_layers, (tuple, list)):
