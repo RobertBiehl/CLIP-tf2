@@ -17,6 +17,19 @@ from tqdm import tqdm
 import clip
 from PIL import Image
 
+from clip_tf.model import build_model
+
+_MODELS = {
+    "RN50": "https://openaipublic.azureedge.net/clip/models/afeb0e10f9e5a86da6080e35cf09123aca3b358a0c3e3b6c78a7b63bc04b6762/RN50.pt",
+    "RN101": "https://openaipublic.azureedge.net/clip/models/8fa8567bab74a42d41c5915025a8e4538c3bdbe8804a470a72f30b0d94fab599/RN101.pt",
+    "RN50x4": "https://openaipublic.azureedge.net/clip/models/7e526bd135e493cef0776de27d5f42653e6b4c8bf9e0f653bb11773263205fdd/RN50x4.pt",
+    "ViT-B/32": "https://openaipublic.azureedge.net/clip/models/40d365715913c9da98579312b702a82c18be219cc2a73407c4526f58eba950af/ViT-B-32.pt",
+}
+
+# model input for verification
+image_url = "https://github.com/openai/CLIP/blob/main/CLIP.png?raw=true"
+text_options = ["a diagram", "a dog", "a cat", "a neural network"]
+
 
 def download_statedict(url: str, root: str = os.path.expanduser("~/.cache/clip")):
     os.makedirs(root, exist_ok=True)
@@ -230,4 +243,51 @@ def verify(model_name: str, keras_model: keras.Model, image_url: str, text_optio
         print(f"Pytorch: {torch_probs}")
         print(f"Tensorflow: {tf_probs}")
 
-    assert np.abs(torch_probs - tf_probs).sum() < 1e-3, f"PyTorch and Tensorflow results should be almost equal: torch_probs={torch_probs}, tf_probs={tf_probs}"
+    assert np.abs(
+        torch_probs - tf_probs).sum() < 1e-3, f"PyTorch and Tensorflow results should be almost equal: torch_probs={torch_probs}, tf_probs={tf_probs}"
+
+
+def get_cache_path(model: str, cache_path: str, type: str = None) -> str:
+    sanitized_model_name = model.replace("/", "_")
+    if type is not None:
+        sanitized_model_name = f"{type}_{sanitized_model_name}"
+    return cache_path.format(model=sanitized_model_name)
+
+
+def convert(model_name: str, output: str, image_output: str = None, text_output: str = None, all: bool = False, should_verify: bool = True):
+    model_url = _MODELS[model_name]
+    state_dict = download_statedict(model_url)
+    model = build_model(state_dict)
+
+    # predict to build shapes (model.build doesnt work, as it only supports float inputs)
+    model.predict((
+        np.ones((1, model.image_resolution, model.image_resolution, 3), np.float32),
+        np.ones((1, 4, 77), np.int64)
+    ))
+    load_pytorch_weights(model, state_dict, verbose=False)
+
+    if should_verify:
+        verify(model_name, model, image_url, text_options, verbose=True)
+
+    # create SavedModel
+    output_filename = get_cache_path(model_name, output)
+    model.save(output_filename)
+
+    # load and test model
+    if should_verify:
+        model = tf.keras.models.load_model(output_filename)
+        model.summary()
+        verify(model_name, model, image_url, text_options, verbose=True)
+
+    if image_output is not None or all:
+        image_output_filename = get_cache_path(model_name, image_output) if image_output else get_cache_path(model_name,
+                                                                                                             output,
+                                                                                                             "image")
+        model.visual.save(image_output_filename)
+
+    text_output = text_output or (output.format(model="text_{model}") if all else None)
+    if text_output is not None:
+        text_output_filename = get_cache_path(model_name, text_output) if text_output else get_cache_path(model_name,
+                                                                                                          output,
+                                                                                                          "text")
+        model.visual.save(text_output_filename)
