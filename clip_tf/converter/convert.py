@@ -19,7 +19,7 @@ from PIL import Image
 
 from clip_tf.model import build_model
 
-_MODELS = {
+MODELS = {
     "RN50": "https://openaipublic.azureedge.net/clip/models/afeb0e10f9e5a86da6080e35cf09123aca3b358a0c3e3b6c78a7b63bc04b6762/RN50.pt",
     "RN101": "https://openaipublic.azureedge.net/clip/models/8fa8567bab74a42d41c5915025a8e4538c3bdbe8804a470a72f30b0d94fab599/RN101.pt",
     "RN50x4": "https://openaipublic.azureedge.net/clip/models/7e526bd135e493cef0776de27d5f42653e6b4c8bf9e0f653bb11773263205fdd/RN50x4.pt",
@@ -255,7 +255,7 @@ def get_cache_path(model: str, cache_path: str, type: str = None) -> str:
 
 
 def convert(model_name: str, output: str, image_output: str = None, text_output: str = None, all: bool = False, should_verify: bool = True):
-    model_url = _MODELS[model_name]
+    model_url = MODELS[model_name]
     state_dict = download_statedict(model_url)
     model = build_model(state_dict)
 
