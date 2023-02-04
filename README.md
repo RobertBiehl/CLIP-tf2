@@ -65,6 +65,17 @@ Text encoder:
 $ python convert_clip.py --model RN50 --text_output models/CLIP_image_{model}
 ```
 
+## Currently supported models:
+- RN50
+- RN101
+- RN50x4
+- RN50x16
+- RN50x64
+- ViT-B/32
+- ViT-B/16
+- ViT-L/14
+- ViT-L/14@336px
+
 ## Tasks
 - [x] Convert PyTorch to Tensorflow model (RN)
 - [x] Export as Tensorflow SavedModel

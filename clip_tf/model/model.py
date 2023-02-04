@@ -1,6 +1,5 @@
 from .clip import CLIP
 
-
 def build_model(state_dict: dict):
     vit = "visual.proj" in state_dict
 

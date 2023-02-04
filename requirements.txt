@@ -2,6 +2,8 @@ tensorflow>=2.4.0
 ftfy
 
 #clip pytorch dependencies
+torch==1.7.1
+torchvision
 regex
 tqdm
-git+https://github.com/openai/CLIP.git
+clip @ git+https://github.com/openai/CLIP.git
