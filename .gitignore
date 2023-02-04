@@ -133,3 +133,4 @@ dmypy.json
 checkpoint
 .idea
 models/
+.DS_Store
