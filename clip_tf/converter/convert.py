@@ -237,7 +237,7 @@ def verify(model_name: str, keras_model: keras.Model, image_url: str, text_optio
     # tf2
     image = image.permute(0, 2, 3, 1).detach().numpy()
     text = text.unsqueeze(0)  # grml... keras doesnt like different cardinality in batch dim
-    text = text.detach().numpy()
+    text = text.detach().numpy().astype(np.int64)
     logits_per_image, logits_per_text = keras_model.predict((image, text))
     tf_probs = tf.nn.softmax(logits_per_image, axis=1)
     tf_probs = np.array(tf_probs)
