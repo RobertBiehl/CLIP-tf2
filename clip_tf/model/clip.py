@@ -125,10 +125,12 @@ class CLIP(keras.Model):
     def dtype(self):
         return self.visual.conv1.weight.dtype
 
-    def encode_image(self, image):
+    @tf.function(input_signature=[tf.TensorSpec(shape=(None, None, None, 3), dtype=tf.float32, name="image")])
+    def encode_image(self, image: tf.Tensor):
         return self.visual(image)
 
-    def encode_text(self, text):
+    @tf.function(input_signature=[tf.TensorSpec(shape=(None, None), dtype=tf.int32, name="text")])
+    def encode_text(self, text: tf.Tensor):
         x = tf.nn.embedding_lookup(self.token_embedding, text)
         x = x + self.positional_embedding
         x = self.transformer(x)
