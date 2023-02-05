@@ -68,9 +68,8 @@ class CLIP(keras.Model):
         self.text_projection = tf.Variable(tf.zeros((transformer_width, embed_dim)), name="text_projection")
         self.logit_scale = tf.Variable(np.ones([]) * np.log(1 / 0.07), dtype=tf.float32, name="logit_scale")
 
-
     def initialize_parameters(self):
-        # TODO: convert to tf
+        # TODO: convert to tf, for model initialization (not needed for pretrained weights
         self.token_embedding.assign(tf.random.normal(self.token_embedding.shape, stddev=0.02))
         self.positional_embedding.assign(tf.random.normal(self.positional_embedding.shape, stddev=0.01))
 
@@ -86,19 +85,25 @@ class CLIP(keras.Model):
             for resnet_block in [self.visual.layer1, self.visual.layer2, self.visual.layer3, self.visual.layer4]:
                 for name, param in resnet_block.named_parameters():
                     if name.endswith("bn3.weight"):
-                        nn.init.zeros_(param)
+                        param.assign(tf.zeros_like(param))
 
         proj_std = (self.transformer.width ** -0.5) * ((2 * self.transformer.layers) ** -0.5)
         attn_std = self.transformer.width ** -0.5
         fc_std = (2 * self.transformer.width) ** -0.5
         for block in self.transformer.resblocks:
-            nn.init.normal_(block.attn.in_proj_weight, std=attn_std)
-            nn.init.normal_(block.attn.out_proj.weight, std=proj_std)
-            nn.init.normal_(block.mlp.c_fc.weight, std=fc_std)
-            nn.init.normal_(block.mlp.c_proj.weight, std=proj_std)
+            block.attn.in_proj.weight.assign(
+                tf.random.normal(block.attn.in_proj.weight.shape, stddev=attn_std))
+            block.attn.out_proj.weight.assign(
+                tf.random.normal(block.attn.out_proj.weight.shape, stddev=proj_std))
+            block.mlp.c_fc.weight.assign(
+                tf.random.normal(block.mlp.c_fc.weight.shape, stddev=fc_std))
+            block.mlp.c_proj.weight.assign(
+                tf.random.normal(block.mlp.c_proj.weight.shape, stddev=proj_std))
 
         if self.text_projection is not None:
-            nn.init.normal_(self.text_projection, std=self.transformer.width ** -0.5)
+            std = self.transformer.width ** -0.5
+            self.text_projection.assign(
+                tf.random.normal(self.text_projection.shape, stddev=std))
 
     def build_attention_mask(self):
         n_dest = self.context_length
@@ -115,24 +120,6 @@ class CLIP(keras.Model):
             [tf.expand_dims(batch_size, -1), tf.constant([1, 1], dtype=tf.int32)], 0
         )
         return tf.tile(mask, mult)
-
-        # lazily create causal attention mask, with full attention between the vision tokens
-        # pytorch uses additive attention mask; fill with -inf
-        mask = np.ones((self.context_length, self.context_length))
-        #mask = np.triu(mask, 1)
-        mask = tf.constant(mask)
-        mask = 1 - tf.linalg.band_part(tf.ones((self.context_length, self.context_length)), -1, 0)
-
-
-        #TODO: build attention mask in tensorflow (or find another way that is more tensorflowy)
-        #mask.fill_(float("-inf"))
-        #mask.triu_(1)  # zero out the lower diagonal
-
-        # import torch
-        # masko = torch.empty(self.context_length, self.context_length)
-        # masko.fill_(float("-inf"))
-        # masko.triu_(1)  # zero out the lower diagonal
-        # return tf.constant(masko.cpu().detach().numpy())
 
     @property
     def dtype(self):
@@ -151,6 +138,8 @@ class CLIP(keras.Model):
         x_shape = tf.shape(x)
         # take features from the eot embedding (eot_token is the highest number in each sequence)
         eot_token = tf.argmax(text, axis=-1)
+
+        # TODO check if dtype is correct
         idx = tf.transpose(tf.stack((tf.range(0, x_shape[0], dtype=tf.int64), eot_token), axis=0, name='take_features_idx'))
         x = tf.gather_nd(x, idx) @ self.text_projection
 
@@ -158,7 +147,7 @@ class CLIP(keras.Model):
 
     @tf.function(input_signature=[(
         tf.TensorSpec(shape=(None, None, None, 3), dtype=tf.float32, name="image"),
-        tf.TensorSpec(shape=(None, None, None), dtype=tf.int64, name="text")
+        tf.TensorSpec(shape=(None, None, None), dtype=tf.int32, name="text")
     )])
     def call(self, input: Tuple[tf.Tensor, tf.Tensor]):
         image, text = input

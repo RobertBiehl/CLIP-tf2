@@ -7,7 +7,7 @@ setup(
     name="clip_tf",
     py_modules=["clip_tf"],
     version="1.0",
-    description="",
+    description="Tensorflow 2 / Keras converter for OpenAI/Clip originally provided in PyTorch.",
     author="Robert Biehl",
     packages=find_packages(exclude=["tests*"]),
     install_requires=[

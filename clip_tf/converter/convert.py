@@ -237,7 +237,7 @@ def verify(model_name: str, keras_model: keras.Model, image_url: str, text_optio
     # tf2
     image = image.permute(0, 2, 3, 1).detach().numpy()
     text = text.unsqueeze(0)  # grml... keras doesnt like different cardinality in batch dim
-    text = text.detach().numpy()
+    text = text.detach().numpy().astype(np.int32)
     logits_per_image, logits_per_text = keras_model.predict((image, text))
     tf_probs = tf.nn.softmax(logits_per_image, axis=1)
     tf_probs = np.array(tf_probs)
@@ -267,7 +267,7 @@ def convert(model_name: str, output: str, image_output: str = None, text_output:
     # predict to build shapes (model.build doesnt work, as it only supports float inputs)
     model.predict((
         np.ones((1, model.image_resolution, model.image_resolution, 3), np.float32),
-        np.ones((1, 4, 77), np.int64)
+        np.ones((1, 4, 77), np.int32)
     ))
     load_pytorch_weights(model, state_dict, verbose=False)
 
@@ -295,4 +295,4 @@ def convert(model_name: str, output: str, image_output: str = None, text_output:
         text_output_filename = get_cache_path(model_name, text_output) if text_output else get_cache_path(model_name,
                                                                                                           output,
                                                                                                           "text")
-        model.visual.save(text_output_filename)
+        model.transformer.save(text_output_filename)
