@@ -5,6 +5,7 @@ import sys
 import urllib
 import warnings
 from typing import List
+import logging
 
 import numpy as np
 import requests
@@ -18,6 +19,8 @@ import clip
 from PIL import Image
 
 from clip_tf.model import build_model
+
+LOGGER = logging.Logger(__name__)
 
 MODELS = {
     "RN50": "https://openaipublic.azureedge.net/clip/models/afeb0e10f9e5a86da6080e35cf09123aca3b358a0c3e3b6c78a7b63bc04b6762/RN50.pt",
@@ -237,7 +240,7 @@ def verify(model_name: str, keras_model: keras.Model, image_url: str, text_optio
     # tf2
     image = image.permute(0, 2, 3, 1).detach().numpy()
     text = text.unsqueeze(0)  # grml... keras doesnt like different cardinality in batch dim
-    text = text.detach().numpy()
+    text = text.detach().numpy().astype(np.int32)
     logits_per_image, logits_per_text = keras_model.predict((image, text))
     tf_probs = tf.nn.softmax(logits_per_image, axis=1)
     tf_probs = np.array(tf_probs)
@@ -259,7 +262,8 @@ def get_cache_path(model: str, cache_path: str, type: str = None) -> str:
     return cache_path.format(model=sanitized_model_name)
 
 
-def convert(model_name: str, output: str, image_output: str = None, text_output: str = None, all: bool = False, should_verify: bool = True):
+def convert(model_name: str, output: str, image_output: str = None, text_output: str = None, all: bool = False,
+            should_verify: bool = True):
     model_url = MODELS[model_name]
     state_dict = download_statedict(model_url)
     model = build_model(state_dict)
@@ -267,27 +271,32 @@ def convert(model_name: str, output: str, image_output: str = None, text_output:
     # predict to build shapes (model.build doesnt work, as it only supports float inputs)
     model.predict((
         np.ones((1, model.image_resolution, model.image_resolution, 3), np.float32),
-        np.ones((1, 4, 77), np.int64)
+        np.ones((1, 4, 77), np.int32)
     ))
     load_pytorch_weights(model, state_dict, verbose=False)
 
     if should_verify:
+        LOGGER.info("Verifying converted model...")
         verify(model_name, model, image_url, text_options, verbose=True)
 
     # create SavedModel
     output_filename = get_cache_path(model_name, output)
+    LOGGER.info(f"Saving model: {output_filename}")
     model.save(output_filename)
 
     # load and test model
     if should_verify:
-        model = tf.keras.models.load_model(output_filename)
-        model.summary()
-        verify(model_name, model, image_url, text_options, verbose=True)
+        LOGGER.info("Verifying saved model...")
+        saved_model = tf.keras.models.load_model(output_filename)
+        saved_model.summary()
+        verify(model_name, saved_model, image_url, text_options, verbose=True)
 
+    # Dedicated export of image or text encoder
     if image_output is not None or all:
         image_output_filename = get_cache_path(model_name, image_output) if image_output else get_cache_path(model_name,
                                                                                                              output,
                                                                                                              "image")
+        LOGGER.info(f"Saving image encoder model: {image_output_filename}")
         model.visual.save(image_output_filename)
 
     text_output = text_output or (output.format(model="text_{model}") if all else None)
@@ -295,4 +304,17 @@ def convert(model_name: str, output: str, image_output: str = None, text_output:
         text_output_filename = get_cache_path(model_name, text_output) if text_output else get_cache_path(model_name,
                                                                                                           output,
                                                                                                           "text")
-        model.visual.save(text_output_filename)
+        LOGGER.info(f"Saving text encoder model: {text_output_filename}")
+        inputs = keras.Input(shape=(None,), name="text", dtype=tf.int32)
+
+        # we have to create a layer to capture all variables used inside of encode_text as well. TODO: more elegant solution
+        class TextEncoder(tf.keras.layers.Layer):
+            def __init__(self, model: tf.keras.models.Model):
+                super().__init__()
+                self.model = model
+            def call(self, inputs: tf.Tensor, **kwargs) -> tf.Tensor:
+                return model.encode_text(inputs)
+
+        outputs = TextEncoder(model)(inputs)
+        text_encoder = keras.models.Model(inputs=inputs, outputs=outputs)
+        text_encoder.save(text_output_filename)
