@@ -69,7 +69,7 @@ class CLIP(keras.Model):
         self.logit_scale = tf.Variable(np.ones([]) * np.log(1 / 0.07), dtype=tf.float32, name="logit_scale")
 
     def initialize_parameters(self):
-        # TODO: convert to tf, for model initialization (not needed for pretrained weights
+        # TODO: convert to tf, for model initialization (not needed for pretrained weights)
         self.token_embedding.assign(tf.random.normal(self.token_embedding.shape, stddev=0.02))
         self.positional_embedding.assign(tf.random.normal(self.positional_embedding.shape, stddev=0.01))
 
